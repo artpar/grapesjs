@@ -50,7 +50,7 @@ module.exports = Backbone.Model.extend({
         var that = this;
 
         if (c.el && c.el.onLoad) {
-
+            console.log("element has onload")
 
             c.el.onLoad = function() {
                 // Load modules
