@@ -6,7 +6,7 @@ module.exports = Backbone.View.extend({
 
     attributes: {
         src: 'about:blank',
-        allowfullscreen: 'allowful  lscreen',
+        allowfullscreen: 'allowfullscreen',
         referrerpolicy: 'origin',
         sandbox: 'allow-same-origin allow-scripts',
     },
