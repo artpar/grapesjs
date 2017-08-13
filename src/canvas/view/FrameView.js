@@ -1,11 +1,12 @@
 var Backbone = require('backbone');
 
+
 module.exports = Backbone.View.extend({
 
     tagName: 'iframe',
 
     attributes: {
-        src: '/',
+        src: 'http://another.goms.com:6336/',
         allowfullscreen: 'allowfullscreen',
         referrerpolicy: 'origin',
         sandbox: 'allow-same-origin allow-scripts',
