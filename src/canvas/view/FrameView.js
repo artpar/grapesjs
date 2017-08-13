@@ -8,7 +8,7 @@ module.exports = Backbone.View.extend({
         src: 'about:blank',
         allowfullscreen: 'allowful  lscreen',
         referrerpolicy: 'origin',
-        sandbox: 'allow-same-origin',
+        sandbox: 'allow-same-origin allow-scripts',
     },
 
     initialize(o) {
