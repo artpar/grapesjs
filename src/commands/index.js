@@ -205,10 +205,7 @@ module.exports = () => {
          * @private
          */
         onLoad() {
-            var that = this;
-            setTimeout(function() {
-                that.loadDefaultCommands();
-            }, 10000)
+            this.loadDefaultCommands();
         },
 
         /**

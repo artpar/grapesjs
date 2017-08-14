@@ -6,10 +6,8 @@ module.exports = Backbone.View.extend({
     tagName: 'iframe',
 
     attributes: {
-        src: window.location,
+        src: 'about:blank',
         allowfullscreen: 'allowfullscreen',
-        referrerpolicy: 'origin',
-        sandbox: 'allow-same-origin allow-scripts',
     },
 
     initialize(o) {
