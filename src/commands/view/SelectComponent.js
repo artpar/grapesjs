@@ -5,8 +5,9 @@ var key = require('keymaster');
 module.exports = {
 
     init(o) {
+        var that = this;
         setTimeout(function() {
-            _.bindAll(this, 'onHover', 'onOut', 'onClick', 'onKeyPress');
+            _.bindAll(that, 'onHover', 'onOut', 'onClick', 'onKeyPress');
         }, 10000);
     },
 
