@@ -1,6 +1,11 @@
-var ToolbarView = require('dom_components/view/ToolbarView');
-var Toolbar = require('dom_components/model/Toolbar');
-var key = require('keymaster');
+import {on, off} from 'utils/mixins'
+
+const ToolbarView = require('dom_components/view/ToolbarView');
+const Toolbar = require('dom_components/model/Toolbar');
+const key = require('keymaster');
+const Backbone = require('backbone');
+let showOffsets;
+const $ = Backbone.$;
 
 module.exports = {
 
@@ -16,6 +21,7 @@ module.exports = {
         this.startSelectComponent();
         this.toggleClipboard(config.copyPaste);
         var em = this.config.em;
+    showOffsets = 1;
 
         em.on('component:update', this.updateAttached, this);
         em.on('change:canvasOffset', this.updateAttached, this);
@@ -63,23 +69,14 @@ module.exports = {
         }
     },
 
-    /**
-     * Returns canavs body el
-     */
-    getCanvasBodyEl() {
-        if (!this.$bodyEl) {
-            this.$bodyEl = $(this.getCanvasBody());
-        }
-        return this.$bodyEl;
-    },
+  /**
 
-    /**
-     * Start select component event
-     * @private
-     * */
-    startSelectComponent() {
-        this.toggleSelectComponent(1);
-    },
+   * Start select component event
+   * @private
+   * */
+  startSelectComponent() {
+   this.toggleSelectComponent(1);
+  },
 
     /**
      * Stop select component event
@@ -89,19 +86,25 @@ module.exports = {
         this.toggleSelectComponent();
     },
 
-    /**
-     * Toggle select component event
-     * @private
-     * */
-    toggleSelectComponent(enable) {
-        var el = '*';
-        var method = enable ? 'on' : 'off';
-        this.getCanvasBodyEl()[method]('mouseover', el, this.onHover)[method]('mouseout', el, this.onOut)[method]('click', el, this.onClick);
+  /**
+   * Toggle select component event
+   * @private
+   * */
+  toggleSelectComponent(enable) {
+    const method = enable ? 'on' : 'off';
+    const methods = {on, off};
+    const body =this.getCanvasBody()
+      ;
+    const win = this.getContentWindow();
+    methods[method](body,'mouseover',  this.onHover)
+      ;
+    methods[method](body,'mouseout',  this.onOut)
+      ;
+    methods[method](body,'click',  this.onClick);
 
-        var cw = this.getContentWindow();
-        cw[method]('scroll', this.onFrameScroll);
-        cw[method]('keydown', this.onKeyPress);
-    },
+    methods[method](win,'scroll', this.onFrameScroll);
+    methods[method](win,'keydown', this.onKeyPress);
+  },
 
     /**
      * On key press event
@@ -163,22 +166,22 @@ module.exports = {
         this.hideElementOffset();
     },
 
-    /**
-     * Show element offset viewer
-     * @param {HTMLElement}  el
-     * @param {Object} pos
-     */
-    showElementOffset(el, pos) {
-        var $el = $(el);
-        var model = $el.data('model');
-        if (model && model.get('status') == 'selected') {
-            return;
-        }
-        this.editor.runCommand('show-offset', {
-            el,
-            elPos: pos,
-        });
-    },
+  /**
+   * Show element offset viewer
+   * @param {HTMLElement}  el
+   * @param {Object} pos
+   */
+  showElementOffset(el, pos) {
+    var $el = $(el);
+    var model = $el.data('model');
+    if((model && model.get('status') == 'selected')||
+      !showOffsets){return;}
+
+    this.editor.runCommand('show-offset', {
+      el,
+      elPos: pos,
+    });
+  },
 
     /**
      * Hide element offset viewer
@@ -265,18 +268,18 @@ module.exports = {
         bStyle.left = left + u;
     },
 
-    /**
-     * Update highlighter element
-     * @param {HTMLElement} el
-     * @param {Object} pos Position object
-     * @private
-     */
-    updateHighlighter(el, pos) {
-        var $el = $(el);
-        var model = $el.data('model');
-        if (!model || (model && model.get('status') == 'selected')) {
-            return;
-        }
+  /**
+   * Update highlighter element
+   * @param {HTMLElement} el
+   * @param {Object} pos Position object
+   * @private
+   */
+  updateHighlighter(el, pos) {
+    var $el = $(el);
+    var model = $el.data('model');
+    if(!model || (model && model.get('status') == 'selected')) {
+      return;
+    }
 
         var hlEl = this.canvas.getHighlighter();
         var hlStyle = hlEl.style;
@@ -288,71 +291,132 @@ module.exports = {
         hlStyle.display = 'block';
     },
 
-    /**
-     * Say what to do after the component was selected
-     * @param {Object}  e
-     * @param {Object}  el
-     * @private
-     * */
-    onSelect(e, el) {
-        e.stopPropagation();
-        var md = this.editorModel.get('selectedComponent');
-        this.cleanPrevious(md);
-        var $el = $(el);
-        var nMd = $el.data('model');
-        if (nMd) {
-            var em = this.em;
-            var mirror = nMd.get('mirror');
-            nMd = mirror ? mirror : nMd;
+  /**
+   * Say what to do after the component was selected
+   * @param {Object}  e
+   * @param {Object}  el
+   * @private
+   * */
+  onSelect(e, el) {
+    e.stopPropagation();
+    var model = $(el).data('model');
 
-            // Close all opened components inside Navigator
-            var opened = em.get('opened');
-            for (var cid in opened) {
-                var m = opened[cid];
-                m.set('open', 0);
-            }
-            var parent = nMd.collection ? nMd.collection.parent : null;
-            while (parent) {
-                parent.set('open', 1);
-                opened[parent.cid] = parent;
-                parent = parent.collection ? parent.collection.parent : null;
-            }
 
-            this.editorModel.set('selectedComponent', nMd);
-            nMd.set('status', 'selected');
-            this.showFixedElementOffset(el);
-            this.hideElementOffset();
-            this.hideHighlighter();
+      if (model) {
+      this.editor.select(model);
+      this.showFixedElementOffset(el);
+      this.hideElementOffset();
+      this.hideHighlighter();
+      this.initResize(el);
+    }
+  },
+
+  /**
+   * Init resizer on the element if possible
+   * @param  {HTMLElement} el
+   * @private
+   */
+  initResize(el) {
+      var em = this.em;
+    var editor = em ? em.get('Editor'): '';
+      var config = em ? em.get('Config'): '';
+        var pfx = config.stylePrefix || '';
+        var attrName = 'data-' + pfx + 'handler';
+      var resizeClass = pfx + 'resizing';
+      var model = em.get('selectedComponent');
+      var resizable = model.get('resizable') ;
+        var options = {};
+    var modelToStyle;
+
+    var toggleBodyClass = (method, e, opts) => {
+      opts.docs && opts.docs.find('body')[method](resizeClass);
+    };
+
+
+    if (editor && resizable) {
+      options = {
+        onStart(e, opts) {
+          toggleBodyClass('addClass', e, opts);
+          modelToStyle = em.get('StyleManager').getModelToStyle(model);
+          showOffsets = 0;
+        },
+        // Update all positioned elements (eg. component toolbar)
+        onMove() {
+          editor.trigger('change:canvasOffset');
+        },
+        onEnd(e, opts) {
+          toggleBodyClass('removeClass', e, opts);
+          editor.trigger('change:canvasOffset');
+          showOffsets = 1;
+        },
+        updateTarget(el, rect, options = {}) {
+      if (!modelToStyle) {
+return;
+      }
+
+      const {store, selectedHandler} = options;
+          const onlyHeight = ['tc', 'bc'].indexOf(selectedHandler) >= 0;
+          const onlyWidth = ['cl', 'cr'].indexOf(selectedHandler) >= 0;
+          const unit = 'px';
+          const style = modelToStyle.getStyle();
+
+          if (!onlyHeight) {
+            style.width = rect.w + unit;
+          }
+
+          if (!onlyWidth) {
+            style.height = rect.h + unit;
+          }
+
+          modelToStyle.setStyle(style, {avoidStore: 1});
+          em.trigger('targetStyleUpdated');
+
+          if (store) {
+            modelToStyle.trigger('change:style', modelToStyle, style, {});
+          }
         }
-    },
+      };
 
-    /**
-     * Update toolbar if the component has one
-     * @param {Object} mod
-     */
-    updateToolbar(mod) {
-        var em = this.config.em;
-        var model = mod == em ? em.get('selectedComponent') : mod;
-        if (!model) {
-            return;
-        }
-        var toolbar = model.get('toolbar');
-        var ppfx = this.ppfx;
-        var showToolbar = em.get('Config').showToolbar;
-        var toolbarEl = this.canvas.getToolbarEl();
-        var toolbarStyle = toolbarEl.style;
+      if (typeof resizable == 'object') {
+        options = Object.assign(options, resizable);
+      }
 
-        if (showToolbar && toolbar && toolbar.length) {
-            toolbarStyle.display = 'flex';
-            if (!this.toolbar) {
-                toolbarEl.innerHTML = '';
-                this.toolbar = new Toolbar(toolbar);
-                var toolbarView = new ToolbarView({
-                    collection: this.toolbar,
-                    editor: this.editor
-                });
-                toolbarEl.appendChild(toolbarView.render().el);
-            }
+      editor.runCommand('resize', {el, options});
+      // On undo/redo the resizer rect is not updating, need somehow to call
+      //this.updateRect on undo/redo action
+    }
+  },
+
+  /**
+   * Update toolbar if the component has one
+   * @param {Object} mod
+   */
+  updateToolbar(mod) {
+    var em = this.config.em;
+    var model = mod == em ? em.get('selectedComponent') : mod;
+    var toolbarEl = this.canvas.getToolbarEl();
+    var toolbarStyle = toolbarEl.style;if(!model){
+      // By putting `toolbarStyle.display = 'none'` will cause kind
+      // of freezed effect with component selection (probably by iframe
+      // switching)
+      toolbarStyle.opacity = 0;return;
+    }
+    var toolbar = model.get('toolbar');
+    var ppfx = this.ppfx;
+    var showToolbar = em.get('Config').showToolbar;
+
+
+    if (showToolbar && toolbar && toolbar.length) {
+      toolbarStyle.opacity = '';toolbarStyle.display = '';
+      if(!this.toolbar) {
+        toolbarEl.innerHTML = '';
+        this.toolbar = new Toolbar(toolbar);
+        var toolbarView = new ToolbarView({
+          collection: this.toolbar,
+          editor: this.editor
+        });
+        toolbarEl.appendChild(toolbarView.render().el);
+      }
 
             this.toolbar.reset(toolbar);
             var view = model.view;
@@ -470,21 +534,19 @@ module.exports = {
             });
     },
 
-    /**
-     * Returns content window
-     * @private
-     */
-    getContentWindow() {
-        if (!this.contWindow)
-            this.contWindow = $(this.frameEl.contentWindow);
-        return this.contWindow;
-    },
+  /**
+   * Returns content window
+   * @private
+   */
+  getContentWindow() {
+    returnthis.frameEl.contentWindow;
 
-    run(em) {
-        if (em && em.get)
-            this.editor = em.get('Editor');
-        this.enable();
-    },
+  },
+
+  run(editor){
+      this.editor = editor && editor.get('Editor');
+    this.enable();
+  },
 
     stop() {
         this.stopSelectComponent();

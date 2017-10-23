@@ -21,6 +21,7 @@ describe('Asset Manager', () => {
     };
 
     beforeEach(() => {
+      document.body.innerHTML = '<div id="asset-c"></div>';
       imgObj = {
         type: 'image',
         src: 'path/to/image',
@@ -29,6 +30,7 @@ describe('Asset Manager', () => {
       };
       obj = new AssetManager();
       obj.init();
+      document.body.querySelector('#asset-c').appendChild(obj.render());
     });
 
     afterEach(() => {
@@ -72,12 +74,6 @@ describe('Asset Manager', () => {
       expect(asset2.get('src')).toEqual(imgObj.src + '2');
     });
 
-    it('Src is unique', () => {
-      obj.add(imgObj);
-      obj.add(imgObj);
-      expect(obj.getAll().length).toEqual(1);
-    });
-
     it('Remove asset', () => {
       obj.add(imgObj);
       obj.remove(imgObj.src);
@@ -94,6 +90,7 @@ describe('Asset Manager', () => {
       var storageManager;
 
       beforeEach(() => {
+        document.body.innerHTML = '<div id="asset-c"></div>';
         storageManager = new StorageManager().init({
           autoload: 0,
           type: storageId
@@ -102,6 +99,7 @@ describe('Asset Manager', () => {
           stm: storageManager,
         });
         storageManager.add(storageId, storageMock);
+        document.body.querySelector('#asset-c').appendChild(obj.render());
       });
 
       afterEach(() => {
@@ -112,7 +110,7 @@ describe('Asset Manager', () => {
         obj.add(imgObj);
         obj.store();
         obj.remove(imgObj.src);
-        obj.load();
+        obj.load({assets: storage['gjs-assets']});
         var asset = obj.get(imgObj.src);
         expect(asset.get('width')).toEqual(imgObj.width);
         expect(asset.get('height')).toEqual(imgObj.height);

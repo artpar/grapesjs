@@ -1,11 +1,6 @@
-var Backbone = require('backbone');
-var ComponentsView = require('./ComponentsView');
+const ComponentsView = require('./ComponentsView');
 
 module.exports = Backbone.View.extend({
-
-  events: {
-    'click': 'initResize',
-  },
 
   className() {
     return this.getClasses();
@@ -16,31 +11,36 @@ module.exports = Backbone.View.extend({
   },
 
   initialize(opt) {
-    var model = this.model;
+    const model = this.model;
     this.opts = opt || {};
     this.config = this.opts.config || {};
     this.em = this.config.em || '';
     this.pfx = this.config.stylePrefix || '';
     this.ppfx = this.config.pStylePrefix || '';
-    this.components = model.get('components');
-    this.attr = model.get("attributes");
+    this.attr = model.get('attributes');
     this.classe = this.attr.class || [];
+    const $el = this.$el;
+    const classes = model.get('classes');
     this.listenTo(model, 'destroy remove', this.remove);
     this.listenTo(model, 'change:style', this.updateStyle);
     this.listenTo(model, 'change:attributes', this.updateAttributes);
+    this.listenTo(model, 'change:highlightable', this.updateHighlight);
     this.listenTo(model, 'change:status', this.updateStatus);
     this.listenTo(model, 'change:state', this.updateState);
     this.listenTo(model, 'change:script', this.render);
     this.listenTo(model, 'change', this.handleChange);
-    this.listenTo(model.get('classes'), 'add remove change', this.updateClasses);
-    this.$el.data('model', model);
+    this.listenTo(classes, 'add remove change', this.updateClasses);
+    $el.data('model', model);
+    $el.data('collection', model.get('components'));
     model.view = this;
-    this.$el.data("collection", this.components);
-
-    if(model.get('classes').length)
-      this.importClasses();
-
+    classes.length && this.importClasses();
     this.init();
+  },
+
+  remove() {
+    Backbone.View.prototype.remove.apply(this);
+    const children = this.childrenView;
+    children && children.stopListening();
   },
 
   /**
@@ -132,6 +132,45 @@ module.exports = Backbone.View.extend({
   },
 
   /**
+   * Update highlight attribute
+   * @private
+   * */
+  updateHighlight() {
+    const hl = this.model.get('highlightable');
+    this.setAttribute('data-highlightable', hl ? 1 : '');
+  },
+
+  /**
+   * Update style attribute
+   * @private
+   * */
+  updateStyle() {
+    this.setAttribute('style', this.getStyleString());
+  },
+
+  /**
+   * Update classe attribute
+   * @private
+   * */
+  updateClasses() {
+    const str = this.model.get('classes').pluck('name').join(' ');
+    this.setAttribute('class', str);
+
+    // Regenerate status class
+    this.updateStatus();
+  },
+
+  /**
+   * Update single attribute
+   * @param {[type]} name  [description]
+   * @param {[type]} value [description]
+   */
+  setAttribute(name, value) {
+    const el = this.$el;
+    value ? el.attr(name, value) : el.removeAttr(name);
+  },
+
+  /**
    * Get classes from attributes.
    * This method is called before initialize
    *
@@ -152,35 +191,27 @@ module.exports = Backbone.View.extend({
    * @private
    * */
   updateAttributes() {
-    var model = this.model;
-    var attributes = {},
-      attr = model.get("attributes");
-    for(var key in attr) {
-        if(attr.hasOwnProperty(key))
-          attributes[key] = attr[key];
+    const model = this.model;
+    const attrs = {}
+    const attr = model.get('attributes');
+    const src = model.get('src');
+
+    for (let key in attr) {
+      attrs[key] = attr[key];
     }
 
-    // Update src
-    if(model.get('src'))
-      attributes.src = model.get('src');
-
-    if(model.get('highlightable'))
-      attributes['data-highlightable'] = 1;
-
-    var styleStr = this.getStyleString();
-
-    if(styleStr)
-      attributes.style = styleStr;
-
-    this.$el.attr(attributes);
+    src && (attrs.src = src);
+    this.$el.attr(attrs);
+    this.updateHighlight();
+    this.updateStyle();
   },
 
   /**
-   * Update style attribute
+   * Update component content
    * @private
    * */
-  updateStyle() {
-    this.$el.attr('style', this.getStyleString());
+  updateContent() {
+    this.getChildrenContainer().innerHTML = this.model.get('content');
   },
 
   /**
@@ -200,98 +231,12 @@ module.exports = Backbone.View.extend({
   },
 
   /**
-   * Update classe attribute
-   * @private
-   * */
-  updateClasses() {
-    var str = '';
-
-    this.model.get('classes').each(model => {
-      str += model.get('name') + ' ';
-    });
-    str = str.trim();
-
-    if(str)
-      this.$el.attr('class', str);
-    else
-      this.$el.removeAttr('class');
-
-    // Regenerate status class
-    this.updateStatus();
-  },
-
-  /**
    * Reply to event call
    * @param object Event that generated the request
    * @private
    * */
   eventCall(event) {
     event.viewResponse = this;
-  },
-
-  /**
-   * Init component for resizing
-   */
-  initResize() {
-    var em = this.opts.config.em;
-    var editor = em ? em.get('Editor') : '';
-    var config = em ? em.get('Config') : '';
-    var pfx = config.stylePrefix || '';
-    var attrName = 'data-' + pfx + 'handler';
-    var resizeClass = pfx + 'resizing';
-    var model = this.model;
-    var modelToStyle;
-
-    var toggleBodyClass = (method, e, opts) => {
-      var handlerAttr = e.target.getAttribute(attrName);
-      var resizeHndClass = pfx + 'resizing-' + handlerAttr;
-      var classToAdd = resizeClass;// + ' ' +resizeHndClass;
-      if (opts.docs) {
-        opts.docs.find('body')[method](classToAdd);
-      }
-    };
-
-    if(editor && this.model.get('resizable')) {
-      editor.runCommand('resize', {
-        el: this.el,
-        options: {
-          onStart(e, opts) {
-            toggleBodyClass('addClass', e, opts);
-            modelToStyle = em.get('StyleManager').getModelToStyle(model);
-          },
-          // Update all positioned elements (eg. component toolbar)
-          onMove() {
-            editor.trigger('change:canvasOffset');
-          },
-          onEnd(e, opts) {
-            toggleBodyClass('removeClass', e, opts);
-            editor.trigger('change:canvasOffset');
-          },
-          updateTarget(el, rect, store) {
-            if (!modelToStyle) {
-              return;
-            }
-            var unit = 'px';
-            var style = _.clone(modelToStyle.get('style'));
-            var width = rect.w + (store ? 1 : 0);
-            style.width = width + unit;
-            style.height = rect.h + unit;
-            modelToStyle.set('style', style, {avoidStore: 1});
-            em.trigger('targetStyleUpdated');
-
-            // This trick will trigger the Undo Manager. To trigger "change:style"
-            // on the Model you need to provide a new object and after that
-            // Undo Manager will trigger only if values are different (this is why
-            // above I've added + 1 to width if store required)
-            if(store) {
-              var style3 = _.clone(style);
-              style3.width = (width - 1) + unit;
-              modelToStyle.set('style', style3);
-            }
-          }
-        }
-      });
-    }
   },
 
   /**
@@ -360,16 +305,16 @@ module.exports = Backbone.View.extend({
    * @private
    */
   renderChildren() {
-    var view = new ComponentsView({
+    const container = this.getChildrenContainer();
+    const view = new ComponentsView({
       collection: this.model.get('components'),
       config: this.config,
-      defaultTypes: this.opts.defaultTypes,
       componentTypes: this.opts.componentTypes,
     });
 
-    var container = this.getChildrenContainer();
-    var childNodes = view.render($(container)).el.childNodes;
-    childNodes = Array.prototype.slice.call(childNodes);
+    view.render(container);
+    this.childrenView = view;
+    const childNodes = Array.prototype.slice.call(view.el.childNodes);
 
     for (var i = 0, len = childNodes.length ; i < len; i++) {
       container.appendChild(childNodes.shift());
@@ -400,9 +345,7 @@ module.exports = Backbone.View.extend({
 
   render() {
     this.renderAttributes();
-    var model = this.model;
-    var container = this.getChildrenContainer();
-    container.innerHTML = model.get('content');
+    this.updateContent();
     this.renderChildren();
     this.updateScript();
     return this;

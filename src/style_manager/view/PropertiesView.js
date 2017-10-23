@@ -1,49 +1,29 @@
-var Backbone = require('backbone');
-var PropertyView = require('./PropertyView');
-var PropertyIntegerView = require('./PropertyIntegerView');
-var PropertyRadioView = require('./PropertyRadioView');
-var PropertySelectView = require('./PropertySelectView');
-var PropertyColorView = require('./PropertyColorView');
-var PropertyFileView = require('./PropertyFileView');
-var PropertyCompositeView = require('./PropertyCompositeView');
-var PropertyStackView = require('./PropertyStackView');
+const PropertyView = require('./PropertyView');
+const PropertyIntegerView = require('./PropertyIntegerView');
+const PropertyRadioView = require('./PropertyRadioView');
+const PropertySelectView = require('./PropertySelectView');
+const PropertyColorView = require('./PropertyColorView');
+const PropertyFileView = require('./PropertyFileView');
+const PropertyCompositeView = require('./PropertyCompositeView');
+const PropertyStackView = require('./PropertyStackView');
 
 module.exports = Backbone.View.extend({
 
   initialize(o) {
-    this.config     = o.config || {};
-    this.pfx       = this.config.stylePrefix || '';
-    this.target      = o.target || {};
+    this.config = o.config || {};
+    this.pfx = this.config.stylePrefix || '';
+    this.target = o.target || {};
     this.propTarget = o.propTarget || {};
-    this.onChange    = o.onChange || {};
-    this.onInputRender  = o.onInputRender || {};
-    this.customValue  = o.customValue || {};
+    this.onChange = o.onChange;
+    this.onInputRender = o.onInputRender || {};
+    this.customValue = o.customValue || {};
   },
 
   render() {
     var fragment = document.createDocumentFragment();
 
-    this.collection.each(function(model){
-      var objView  = PropertyView;
-
-      switch(model.get('type')){
-        case 'integer':
-          objView  = PropertyIntegerView;   break;
-        case 'radio':
-          objView  = PropertyRadioView;  break;
-        case 'select':
-          objView  = PropertySelectView;  break;
-        case 'color':
-          objView  = PropertyColorView;  break;
-        case 'file':
-          objView  = PropertyFileView;    break;
-        case 'composite':
-          objView  = PropertyCompositeView;break;
-        case 'stack':
-          objView  = PropertyStackView;  break;
-      }
-
-      var view = new objView({
+    this.collection.each((model) => {
+      var view = new model.typeView({
         model,
         name: model.get('name'),
         id: this.pfx + model.get('property'),
@@ -58,11 +38,11 @@ module.exports = Backbone.View.extend({
         view.customValue = this.customValue;
       }
 
-      fragment.appendChild(view.render().el);
-    },this);
+      view.render();
+      fragment.appendChild(view.el);
+    });
 
     this.$el.append(fragment);
-    this.$el.append($('<div>', {class: "clear"}));
     this.$el.attr('class', this.pfx + 'properties');
     return this;
   }

@@ -57,7 +57,8 @@ module.exports = () => {
      */
     init(config) {
       c = config || {};
-      for (var name in defaults){
+
+      for (var name in defaults) {
         if (!(name in c))
           c[name] = defaults[name];
       }
@@ -65,15 +66,8 @@ module.exports = () => {
       defaultStorages.remote  = new RemoteStorage(c);
       defaultStorages.local = new LocalStorage(c);
       c.currentStorage = c.type;
-      return this;
-    },
-
-    /**
-     * Callback executed after the module is loaded
-     * @private
-     */
-    onLoad() {
       this.loadDefaultProviders().setCurrent(c.type);
+      return this;
     },
 
     /**
@@ -197,12 +191,13 @@ module.exports = () => {
      * Load resource from the current storage by keys
      * @param  {string|Array<string>} keys Keys to load
      * @param {Function} clb Callback function
-     * @return {Object|null} Loaded resources
      * @example
-     * var data = storageManager.load(['item1', 'item2']);
-     * // data -> {item1: value1, item2: value2}
-     * var data2 = storageManager.load('item1');
-     * // data2 -> {item1: value1}
+     * storageManager.load(['item1', 'item2'], res => {
+     *  // res -> {item1: value1, item2: value2}
+     * });
+     * storageManager.load('item1', res => {
+     * // res -> {item1: value1}
+     * });
      * */
     load(keys, clb) {
       var st = this.get(this.getCurrent());
@@ -215,16 +210,16 @@ module.exports = () => {
       for (var i = 0, len = keys.length; i < len; i++)
         keysF.push(c.id + keys[i]);
 
-      var loaded = st ? st.load(keysF, clb) : {};
+      st && st.load(keysF, res => {
+        // Restore keys name
+        for (var itemKey in res) {
+          var reg = new RegExp('^' + c.id + '');
+          var itemKeyR = itemKey.replace(reg, '');
+          result[itemKeyR] = res[itemKey];
+        }
 
-      // Restore keys name
-      for (var itemKey in loaded){
-        var reg = new RegExp('^' + c.id + '');
-        var itemKeyR = itemKey.replace(reg, '');
-        result[itemKeyR] = loaded[itemKey];
-      }
-
-      return result;
+        clb && clb(result);
+      });
     },
 
     /**

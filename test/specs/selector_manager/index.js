@@ -3,15 +3,18 @@ var Models = require('./model/SelectorModels');
 var ClassTagView = require('./view/ClassTagView');
 var ClassTagsView = require('./view/ClassTagsView');
 var e2e = require('./e2e/ClassManager');
+var Editor = require('editor/model/Editor');
 
 describe('SelectorManager', () => {
 
   describe('Main', () => {
 
     var obj;
+    let em;
 
     beforeEach(() => {
-      obj = new SelectorManager().init();
+      em = new Editor({});
+      obj = new SelectorManager().init({em});
     });
 
     afterEach(() => {
@@ -75,8 +78,11 @@ describe('SelectorManager', () => {
   });
 
   Models.run();
-  ClassTagView.run();
-  ClassTagsView.run();
-  e2e.run();
+
+  describe('Views', () => {
+    ClassTagView.run();
+    ClassTagsView.run();
+    e2e.run();
+  });
 
 });

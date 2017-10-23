@@ -85,25 +85,25 @@ module.exports = () => {
                     this.add(obj.id, obj);
             }
 
-            defaultCommands['select-comp'] = require('./view/SelectComponent');
-            defaultCommands['create-comp'] = require('./view/CreateComponent');
-            defaultCommands['delete-comp'] = require('./view/DeleteComponent');
-            defaultCommands['image-comp'] = require('./view/ImageComponent');
-            defaultCommands['move-comp'] = require('./view/MoveComponent');
-            defaultCommands['text-comp'] = require('./view/TextComponent');
-            defaultCommands['insert-custom'] = require('./view/InsertCustom');
-            defaultCommands['export-template'] = require('./view/ExportTemplate');
-            defaultCommands['sw-visibility'] = require('./view/SwitchVisibility');
-            defaultCommands['open-layers'] = require('./view/OpenLayers');
-            defaultCommands['open-sm'] = require('./view/OpenStyleManager');
-            defaultCommands['open-tm'] = require('./view/OpenTraitManager');
-            defaultCommands['open-blocks'] = require('./view/OpenBlocks');
-            defaultCommands['open-assets'] = require('./view/OpenAssets');
-            defaultCommands['show-offset'] = require('./view/ShowOffset');
-            defaultCommands.fullscreen = require('./view/Fullscreen');
-            defaultCommands.preview = require('./view/Preview');
-            defaultCommands.resize = require('./view/Resize');
-            defaultCommands.drag = require('./view/Drag');
+      defaultCommands['select-comp'] = require('./view/SelectComponent');
+      defaultCommands['create-comp'] = require('./view/CreateComponent');
+      defaultCommands['delete-comp'] = require('./view/DeleteComponent');
+      defaultCommands['image-comp'] = require('./view/ImageComponent');
+      defaultCommands['move-comp'] = require('./view/MoveComponent');
+      defaultCommands['text-comp'] = require('./view/TextComponent');
+      defaultCommands['insert-custom'] = require('./view/InsertCustom');
+      defaultCommands['export-template'] = require('./view/ExportTemplate');
+      defaultCommands['sw-visibility'] = require('./view/SwitchVisibility');
+      defaultCommands['open-layers'] = require('./view/OpenLayers');
+      defaultCommands['open-sm'] = require('./view/OpenStyleManager');
+      defaultCommands['open-tm'] = require('./view/OpenTraitManager');
+      defaultCommands['open-blocks'] = require('./view/OpenBlocks');
+      defaultCommands['open-assets'] = require('./view/OpenAssets');
+      defaultCommands['show-offset'] = require('./view/ShowOffset');
+      defaultCommands['select-parent'] = require('./view/SelectParent');defaultCommands.fullscreen = require('./view/Fullscreen');
+      defaultCommands.preview = require('./view/Preview');
+      defaultCommands.resize = require('./view/Resize');
+      defaultCommands.drag = require('./view/Drag');
 
             defaultCommands['tlb-delete'] = {
                 run(ed) {
@@ -114,12 +114,11 @@ module.exports = () => {
                         return;
                     }
 
-                    sel.set('status', '');
-                    sel.destroy();
-                    ed.trigger('component:update', sel);
-                    ed.editor.set('selectedComponent', null);
-                },
-            };
+          ed.select(null);
+          sel.destroy();
+
+        },
+      };
 
             defaultCommands['tlb-clone'] = {
                 run(ed) {
@@ -197,32 +196,26 @@ module.exports = () => {
             if (c.em)
                 c.model = c.em.get('Canvas');
 
-            return this;
-        },
+      this.loadDefaultCommands();
+          return this;
+    },
 
-        /**
-         * On load callback
-         * @private
-         */
-        onLoad() {
-            this.loadDefaultCommands();
-        },
+    /**
 
-        /**
-         * Add new command to the collection
-         * @param	{string} id Command's ID
-         * @param	{Object} command Object representing you command. Methods `run` and `stop` are required
-         * @return {this}
-         * @example
-         * commands.add('myCommand', {
-         * 	run:  function(editor, sender){
-         * 		alert('Hello world!');
-         * 	},
-         * 	stop:  function(editor, sender){
-         * 	},
-         * });
-         * */
-        add,
+     * Add new command to the collection
+     * @param	{string} id Command's ID
+     * @param	{Object} command Object representing you command. Methods `run` and `stop` are required
+     * @return {this}
+     * @example
+     * commands.add('myCommand', {
+     * 	run:  function(editor, sender){
+     * 		alert('Hello world!');
+     * 	},
+     * 	stop:  function(editor, sender){
+     * 	},
+     * });
+     * */
+    add,
 
         /**
          * Get command by ID
@@ -252,15 +245,15 @@ module.exports = () => {
             return !!commands[id];
         },
 
-        /**
-         * Load default commands
-         * @return {this}
-         * @private
-         * */
-        loadDefaultCommands() {
-            for (var id in defaultCommands) {
-                this.add(id, defaultCommands[id]);
-            }
+    /**
+     * Load default commands
+     * @return {this}
+     * @private
+     * */
+    loadDefaultCommands() {
+      for (var id in defaultCommands) {
+        this.add(id, defaultCommands[id]);
+      }
 
             return this;
         },

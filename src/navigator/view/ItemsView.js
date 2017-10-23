@@ -3,35 +3,35 @@ var ItemView = require('./ItemView');
 
 module.exports = Backbone.View.extend({
 
-  initialize(o) {
+  initialize(o = {}) {
     this.opt = o;
-    this.config = o.config;
+    const config = o.config || {};
+    this.level = o.level;
+    this.config = config;
     this.preview = o.preview;
-    this.ppfx = o.config.pStylePrefix || '';
-    this.pfx = o.config.stylePrefix || '';
+    this.ppfx = config.pStylePrefix || '';
+    this.pfx = config.stylePrefix || '';
     this.parent = o.parent;
     this.listenTo(this.collection, 'add', this.addTo);
     this.listenTo(this.collection, 'reset resetNavigator', this.render);
-    this.className   = this.pfx + 'items';
+    this.className = this.pfx + 'items';
 
-    if(this.config.sortable && !this.opt.sorter){
+    if (config.sortable && !this.opt.sorter) {
       var pfx = this.pfx;
-      var utils = this.config.em.get('Utils');
+      var utils = config.em.get('Utils');
       this.opt.sorter = new utils.Sorter({
-        container: this.el,
+        container: config.sortContainer || this.el,
         containerSel: '.' + pfx + 'items',
         itemSel: '.' + pfx + 'item',
         ppfx: this.ppfx,
         ignoreViewChildren: 1,
+        avoidSelectOnEnd: 1,
         pfx,
         nested: 1
       });
     }
 
     this.sorter = this.opt.sorter || '';
-
-    if(!this.parent)
-      this.className  += ' ' + this.pfx + this.config.containerId;
 
     // For the sorter
     this.$el.data('collection', this.collection);
@@ -61,10 +61,16 @@ module.exports = Backbone.View.extend({
    * @return Object Object created
    * */
   addToCollection(model, fragmentEl, index) {
+    const level = this.level;
     var fragment  = fragmentEl || null;
     var viewObject  = ItemView;
 
+    if(!this.isCountable(model, this.config.hideTextnode)) {
+      return;
+    }
+
     var view = new viewObject({
+      level,
       model,
       config: this.config,
       sorter: this.sorter,
@@ -106,24 +112,18 @@ module.exports = Backbone.View.extend({
     var type = model.get('type');
     var tag = model.get('tagName');
     if( ((type == 'textnode' || tag == 'br') && hide) ||
-        model.get('hiddenLayer')) {
+        !model.get('layerable')) {
       return false;
     }
     return true;
   },
 
   render() {
-    var fragment = document.createDocumentFragment();
-    this.$el.empty();
-
-    this.collection.each(function(model) {
-      if(!this.isCountable(model, this.config.hideTextnode))
-        return;
-      this.addToCollection(model, fragment);
-    }, this);
-
-    this.$el.append(fragment);
-    this.$el.attr('class', _.result(this, 'className'));
+    const frag = document.createDocumentFragment();
+    this.el.innerHTML = '';
+    this.collection.each(model => this.addToCollection(model, frag));
+    this.el.appendChild(frag);
+    this.$el.attr('class', this.className);
     return this;
   }
 });

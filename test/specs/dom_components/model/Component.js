@@ -6,6 +6,7 @@ const ComponentLink = require('dom_components/model/ComponentLink');
 const ComponentMap = require('dom_components/model/ComponentMap');
 const ComponentVideo = require('dom_components/model/ComponentVideo');
 const Components = require('dom_components/model/Components');
+const $ = Backbone.$;
 
 module.exports = {
   run() {
@@ -19,7 +20,7 @@ module.exports = {
           obj = new Component();
           dcomp = new DomComponents();
           compOpts = {
-            defaultTypes: dcomp.componentTypes,
+            componentTypes: dcomp.componentTypes,
           };
         });
 
@@ -254,7 +255,7 @@ module.exports = {
         beforeEach(() => {
           dcomp = new DomComponents();
           compOpts = {
-            defaultTypes: dcomp.componentTypes,
+            componentTypes: dcomp.componentTypes,
           }
         });
 
